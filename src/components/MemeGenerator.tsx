@@ -261,7 +261,7 @@ export default function MemeGenerator() {
         <ImageModal
           meme={selectedMeme}
           memeTitle={
-            selectedMame.kind === 'user'
+            selectedMeme.kind === 'user'
               ? 'Your Creation'
               : `Bother #${generatedMemes.length - (selectedMemeIndex ?? 0)}`
           }
