@@ -10,7 +10,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Meme Generator",
-  description: "Создайте свой собственный мем!",
+  description: "Are you okay????!",
 };
 
 export default function RootLayout({
