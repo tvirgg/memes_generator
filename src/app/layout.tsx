@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Meme Generator",
+  title: "Are you okay???!!!",
   description: "Are you okay????!",
 };
 
