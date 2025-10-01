@@ -73,10 +73,7 @@ export default function MemeGenerator() {
         localStorage.setItem('generatedMemes', JSON.stringify(generatedMemes.slice(0, MAX_STORED_MEMES)));
       } catch (error) {
         if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-          console.error("QuotaExceededError: Failed to save memes. Storage limit reached.", error);
-          addToast("Storage limit reached! Some older memes might not be saved.", "error");
         } else {
-          console.error("Error saving memes to localStorage:", error);
         }
       }
     }
@@ -175,7 +172,7 @@ export default function MemeGenerator() {
 
   useEffect(() => {
     const scheduleNext = () => {
-      const delay = Math.floor(Math.random() * 900) + 100;
+      const delay = Math.floor(Math.random() * 900) + 500;
       feedTimerRef.current = window.setTimeout(() => {
         const randomSrc = MEME_POOL[Math.floor(Math.random() * MEME_POOL.length)];
         const newMeme: MemeItem = { id: Date.now() + Math.random(), src: randomSrc, kind: "feed", isNew: true };

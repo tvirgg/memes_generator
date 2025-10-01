@@ -646,19 +646,59 @@ export default function MemeGenerator() {
     ...Array.from({ length: 50 }).map((_, i) => `/meme-${i + 1}.png`),
   ];
 
-  const [generatedMemes, setGeneratedMemes] = useState<MemeItem[]>(() =>
-    Array.from({ length: 111 }).map((_, index) => ({
-      id: Date.now() + Math.random() + index,
-      src: MEME_POOL[Math.floor(Math.random() * MEME_POOL.length)],
-      kind: "feed",
-    }))
-  );
+  const [generatedMemes, setGeneratedMemes] = useState<MemeItem[]>([]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMemeId, setSelectedMemeId] = useState<number | null>(null);
 
   const { addToast } = useToasts();
+  const MAX_STORED_MEMES = 100; // Define a reasonable limit for stored memes
+
+  // Хелпер для создания пачки новых мемов
+  const createNewFeedMemes = (count: number) => {
+    return Array.from({ length: count }).map((_, index) => ({
+      id: Date.now() + Math.random() + index,
+      src: MEME_POOL[Math.floor(Math.random() * MEME_POOL.length)],
+      kind: "feed" as const,
+    }));
+  };
+
+  // Загружаем мемы из localStorage при первой загрузке, или создаем новые
+  useEffect(() => {
+    try {
+      const savedMemes = localStorage.getItem('generatedMemes');
+      if (savedMemes) {
+        const parsedMemes = JSON.parse(savedMemes);
+        if (Array.isArray(parsedMemes) && parsedMemes.length > 0) {
+          // Если нашли, добавляем 15 новых в начало
+          const newMemesOnRefresh = createNewFeedMemes(15);
+          setGeneratedMemes([...newMemesOnRefresh, ...parsedMemes]);
+          return; // Загрузили, выходим
+        }
+      }
+    } catch (error) {
+      console.error("Ошибка загрузки мемов из localStorage:", error);
+    }
+    // Резервный вариант для самого первого посещения
+    setGeneratedMemes(createNewFeedMemes(111));
+  }, []); // Пустой массив зависимостей гарантирует, что это выполнится только один раз
+
+  // Сохраняем мемы в localStorage при каждом их изменении
+  useEffect(() => {
+    if (generatedMemes.length > 0) {
+      try {
+        localStorage.setItem('generatedMemes', JSON.stringify(generatedMemes.slice(0, MAX_STORED_MEMES)));
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+          console.error("QuotaExceededError: Failed to save memes. Storage limit reached.", error);
+          addToast("Ошибка: достигнут лимит хранилища! Старые мемы могут не сохраниться.");
+        } else {
+          console.error("Error saving memes to localStorage:", error);
+        }
+      }
+    }
+  }, [generatedMemes, addToast]); // Added addToast to dependency array
 
   useEffect(() => {
     const image = new window.Image();
@@ -721,14 +761,12 @@ export default function MemeGenerator() {
         ctx.fillRect(40, yPos - textHeight / 2, textWidth, textHeight);
         ctx.fillStyle = 'white';
         ctx.fillText(text, 40 + fontSize * 0.25, yPos);
+
         const newMemeUrl = canvas.toDataURL("image/png");
-        setGeneratedMemes(prev => [
-          { id: Date.now(), src: newMemeUrl, kind: "user" },
-          ...prev,
-        ]);
+        const newMeme: MemeItem = { id: Date.now(), src: newMemeUrl, kind: "user" };
+
+        setGeneratedMemes(prev => [newMeme, ...prev]);
         setText("");
-        // Открываем модалку с ID только что созданного мема
-        const newMeme = generatedMemes[0];
         openModal(newMeme.id);
       }
     }
@@ -755,9 +793,7 @@ export default function MemeGenerator() {
 
   useEffect(() => {
     const scheduleNext = () => {
-      // ИЗМЕНЕНИЕ: Еще больше уменьшаем задержку. Стало: от 0.1 до 0.5 секунд.
       const delay = Math.floor(Math.random() * 900) + 100;
-      // @ts-ignore
       feedTimerRef.current = window.setTimeout(() => {
         const randomSrc = MEME_POOL[Math.floor(Math.random() * MEME_POOL.length)];
         const newMeme: MemeItem = { id: Date.now() + Math.random(), src: randomSrc, kind: "feed", isNew: true };
@@ -772,7 +808,7 @@ export default function MemeGenerator() {
             )
           );
         }, 1400);
-        highlightTimeouts.current.push(t as unknown as number);
+        highlightTimeouts.current.push(t);
         scheduleNext();
       }, delay);
     };
@@ -822,7 +858,7 @@ export default function MemeGenerator() {
                     item.isNew ? "new-meme-highlight" : ""
                   }`}
                   onClick={() => openModal(item.id)}
-                  onMouseEnter={() => preloadImage(item.src)} // <-- ПРЕДЗАГРУЗКА ЗДЕСЬ
+                  onMouseEnter={() => preloadImage(item.src)}
                 >
                   <div className="relative w-full aspect-square">
                     <Image
