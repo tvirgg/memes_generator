@@ -41,7 +41,7 @@ export function Header({
           <button onClick={onToggleMute} className="transition-transform hover:scale-110">
             {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
           </button>
-          <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-110">
+          <a href="https://x.com/arrruokay" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-110">
             <X size={24} />
           </a>
         </div>

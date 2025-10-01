@@ -254,11 +254,6 @@ export default function MemeGenerator() {
                 </div>
               ))}
             </div>
-            <div className="text-center mt-8">
-              <Button onClick={handleSaveAll} variant="primary" className="py-3 text-lg px-12">
-                Сохранить Все (.zip)
-              </Button>
-            </div>
           </div>
         )}
       </div>
