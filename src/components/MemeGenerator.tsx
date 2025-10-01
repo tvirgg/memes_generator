@@ -35,6 +35,7 @@ export default function MemeGenerator() {
   const [selectedMemeId, setSelectedMemeId] = useState<number | null>(null);
 
   const { addToast } = useToasts();
+  const MAX_STORED_MEMES = 100; // Define a reasonable limit for stored memes
 
   // Хелпер для создания пачки новых мемов
   const createNewFeedMemes = (count: number) => {
@@ -68,9 +69,18 @@ export default function MemeGenerator() {
   // Сохраняем мемы в localStorage при каждом их изменении
   useEffect(() => {
     if (generatedMemes.length > 0) {
-      localStorage.setItem('generatedMemes', JSON.stringify(generatedMemes));
+      try {
+        localStorage.setItem('generatedMemes', JSON.stringify(generatedMemes.slice(0, MAX_STORED_MEMES)));
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+          console.error("QuotaExceededError: Failed to save memes. Storage limit reached.", error);
+          addToast("Storage limit reached! Some older memes might not be saved.", "error");
+        } else {
+          console.error("Error saving memes to localStorage:", error);
+        }
+      }
     }
-  }, [generatedMemes]);
+  }, [generatedMemes, addToast]); // Added addToast to dependency array
 
   useEffect(() => {
     const image = new window.Image();
@@ -166,7 +176,6 @@ export default function MemeGenerator() {
   useEffect(() => {
     const scheduleNext = () => {
       const delay = Math.floor(Math.random() * 900) + 100;
-      // @ts-ignore
       feedTimerRef.current = window.setTimeout(() => {
         const randomSrc = MEME_POOL[Math.floor(Math.random() * MEME_POOL.length)];
         const newMeme: MemeItem = { id: Date.now() + Math.random(), src: randomSrc, kind: "feed", isNew: true };
@@ -181,7 +190,7 @@ export default function MemeGenerator() {
             )
           );
         }, 1400);
-        highlightTimeouts.current.push(t as unknown as number);
+        highlightTimeouts.current.push(t);
         scheduleNext();
       }, delay);
     };
